@@ -1,0 +1,222 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hospital Back Office Login</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #eef2f7;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    .login {
+      width: 100%;
+      max-width: 400px;
+      background: #fff;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px #17255418;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #173b70;
+    }
+
+    p {
+      color: #475467;
+      line-height: 1.5;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: 600;
+    }
+
+    input,
+    select,
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 7px;
+      border: 1px solid #ccd5e0;
+      font-size: 15px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid #84adff;
+      border-color: #175cd3;
+    }
+
+    button {
+      margin-top: 20px;
+      background: #175cd3;
+      color: #fff;
+      border: 0;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    #message {
+      margin-top: 14px;
+      overflow-wrap: anywhere;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="login">
+    <h2>Hospital Back Office</h2>
+    <p>Sign in with your hospital staff account.</p>
+
+    <form id="loginForm">
+      <label for="tenant">Hospital Code</label>
+      <input
+        id="tenant"
+        name="tenant"
+        value="demo-city"
+        autocomplete="organization"
+        required
+      >
+
+      <label for="role">Staff Role</label>
+      <select id="role" name="role" required>
+        <option value="admin">Admin</option>
+        <option value="receptionist">Receptionist</option>
+        <option value="doctor">Doctor</option>
+        <option value="billing">Billing</option>
+        <option value="nurse">Nurse</option>
+      </select>
+
+      <label for="username">Username</label>
+      <input
+        id="username"
+        name="username"
+        autocomplete="username"
+        required
+      >
+
+      <label for="password">Password</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        required
+      >
+
+      <button id="loginButton" type="submit">Sign In</button>
+      <div id="message" role="status" aria-live="polite"></div>
+    </form>
+  </main>
+
+  <script>
+    const form = document.getElementById("loginForm");
+    const message = document.getElementById("message");
+    const loginButton = document.getElementById("loginButton");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const tenant = document.getElementById("tenant").value.trim().toLowerCase();
+      const role = document.getElementById("role").value;
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!tenant || !username || !password) {
+        message.style.color = "#b42318";
+        message.textContent = "Please fill in all fields.";
+        return;
+      }
+
+      loginButton.disabled = true;
+      message.style.color = "#444";
+      message.textContent = "Signing in...";
+
+      try {
+        const response = await fetch(
+          `${window.location.origin}/api/auth/login`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Tenant": tenant
+            },
+            body: JSON.stringify({
+              username: username,
+              password: password
+            })
+          }
+        );
+
+        let data;
+
+        try {
+          data = await response.json();
+        } catch {
+          throw new Error("Server returned an invalid response.");
+        }
+
+        if (!response.ok) {
+          const detail = data.detail;
+          const errorText = Array.isArray(detail)
+            ? detail.map(item => item.msg).join(", ")
+            : detail;
+
+          throw new Error(errorText || "Login failed.");
+        }
+
+        if (!data.token || !data.user) {
+          throw new Error("Login response is missing token or user details.");
+        }
+
+        if (data.user.role !== role) {
+          throw new Error(
+            "Selected role does not match your account role."
+          );
+        }
+
+        // Use the same session keys as the existing hospital dashboard.
+        sessionStorage.setItem("hms_tok", data.token);
+        sessionStorage.setItem("hms_user", JSON.stringify(data.user));
+        localStorage.setItem("hms_t", tenant);
+
+        message.style.color = "#067647";
+        message.textContent = "Login successful. Opening dashboard...";
+
+        window.location.replace(
+          "/app/?t=" + encodeURIComponent(tenant)
+        );
+
+      } catch (error) {
+        message.style.color = "#b42318";
+        message.textContent =
+          error.message || "Unable to connect to the server.";
+      } finally {
+        loginButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
+```
