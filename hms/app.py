@@ -38,10 +38,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://hospital-demo-phi.vercel.app",
     ],
-    
-allow_origin_regex=r"^http://(localhost|127\.0\.0\.1|192\.168\.29\.\d{1,3})(:\d+)?$",
-
+    allow_origin_regex=r"^http://(localhost|127\.0\.0\.1|192\.168\.29\.\d{1,3})(:\d+)?$",
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Tenant"],
